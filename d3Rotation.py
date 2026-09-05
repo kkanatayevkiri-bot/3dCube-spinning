@@ -19,21 +19,24 @@ cube_vertices = [
     [-1, 1, 1],
 ]
 
-# The 12 lines (edges) connecting the corners
-edges = [
-    (0, 1),
-    (1, 2),
-    (2, 3),
-    (3, 0),
-    (4, 5),
-    (5, 6),
-    (6, 7),
-    (7, 4),
-    (0, 4),
-    (1, 5),
-    (2, 6),
-    (3, 7),
+faces = [
+    (0, 1, 2, 3),  # Front
+    (5, 4, 7, 6),  # Back
+    (4, 0, 3, 7),  # Left
+    (1, 5, 6, 2),  # Right
+    (4, 5, 1, 0),  # Top
+    (3, 2, 6, 7)   # Bottom
 ]
+
+face_colors = [
+    (255, 50, 50),   # Red
+    (50, 255, 50),   # Green
+    (50, 50, 255),   # Blue
+    (255, 255, 50),  # Yellow
+    (255, 50, 255),  # Purple
+    (50, 255, 255)   # Cyan
+]
+
 SCALE = 100
 
 class Game:
@@ -44,26 +47,23 @@ class Game:
         self.play = True
         self.Xa = self.Ya = self.Za = 0
 
-    def xRotation(self,x,y,z):
-        # Rotate in 3D
+    def rotation(self,x,y,z):
+        #rotation around 'x' axis
         dx = x
         dy = y * math.cos(self.Xa) - z * math.sin(self.Xa)
         dz = y * math.sin(self.Xa) + z * math.cos(self.Xa)
 
-        return dx, dy, dz
+        #rotation around 'y' axis
+        newY = dy
+        newX = dx*math.cos(self.Ya) - dz*math.sin(self.Ya)
+        newZ = dx*math.sin(self.Ya) + dz*math.cos(self.Ya)
 
-    def yRotation(self,x,y,z):
-        dy = y
-        dx = x*math.cos(self.Ya) - z*math.sin(self.Ya)
-        dz = x*math.sin(self.Ya) + z*math.cos(self.Ya)
+        #rotation around 'z' axis
+        final_z = newZ
+        final_x = newX*math.cos(self.Za) - newY*math.sin(self.Za)
+        final_y = newX*math.sin(self.Za) + newY*math.cos(self.Za)
 
-        return dx, dy, dz
-
-    def zRotation(self,x,y,z):
-        dz = z
-        dx = x*math.cos(self.Za) - y*math.sin(self.Za)
-        dy = x*math.sin(self.Za) + y*math.cos(self.Za)
-        return dx,dy,dz
+        return final_x,final_y,final_z
     
     def keyboard(self):
         for event in pg.event.get():
@@ -80,29 +80,22 @@ class Game:
         self.display.fill((0,76,153))
         dots=[]
         for x,y,z in cube_vertices:
-            newX,newY,newZ = self.xRotation(x,y,z)
-            newX,newY,newZ = self.yRotation(newX,newY,newZ)
-            newX,newY,newZ = self.zRotation(newX,newY,newZ)
-            dots.append((newX,newY))
+            newX,newY,newZ = self.rotation(x,y,z)
+            dots.append((newX, newY, newZ))
 
-        for a,b in edges:
-            dot = dots[a]
-            dot2 = dots[b]
-            x, y = dot
-            x2, y2 = dot2
-            point1 = HALFX+x*100, HALFX+y*100
-            point2 = HALFX+x2*100, HALFX+y2*100
-            pg.draw.line(self.display,(255,0,0),point1,point2)
+        qeue = []
+        for i, f in enumerate(faces):
+            ave_z = sum(dots[index][2] for index in f)/4
+            qeue.append((ave_z, f, face_colors[i]))
 
-        # for i in range(len(dots)-2):
-        #     dot1 = (HALFX+dots[i][0]*100,HALFY+dots[i][1]*100)
-        #     dot2 = (HALFX+dots[i+1][0]*100,HALFY+dots[i+1][1]*100)
-        #     pg.draw.line(self.display,(255,0,0),dot1,dot2)
+        qeue.sort(key=lambda item:item[0], reverse=True)
 
-        for sx,sy in dots:
-            pg.draw.circle(self.display,(255,255,0),(HALFX+(sx*100),HALFY+(sy*100)),5)
+        for z, f, c in qeue:
+            points = [(30*dots[i][0]+400, 30*dots[i][1]+400) for i in f]
+            pg.draw.polygon(self.display, c, points)
+            # pg.draw.polygon(self.display, (0, 0, 0), points, 2)
+
         pg.display.flip()
-
     def run(self):
         while self.play:
             self.keyboard()
