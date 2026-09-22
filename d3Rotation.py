@@ -9,14 +9,14 @@ FPS = 60
 
 #CUBE:
 cube_vertices = [
-    [-1, -1, -1],
-    [1, -1, -1],
-    [1, 1, -1],
-    [-1, 1, -1],
-    [-1, -1, 1],
-    [1, -1, 1],
-    [1, 1, 1],
-    [-1, 1, 1],
+    [-0.302, -0.26, -0.069],
+    [0.302, -0.26, -0.069],
+    [0.302, 0.26, -0.069],
+    [-0.302, 0.26, -0.069],
+    [-0.302, -0.26, 0.069],
+    [0.302, -0.26, 0.069],
+    [0.302, 0.26, 0.069],
+    [-0.302, 0.26, 0.069],
 ]
 
 faces = [
@@ -47,6 +47,10 @@ class Game:
         self.play = True
         self.Xa = self.Ya = self.Za = 0
 
+        self.freeze=False
+        self.offsetX, self.offsetY = 400,400
+        self.scale = 100
+
     def rotation(self,x,y,z):
         #rotation around 'x' axis
         dx = x
@@ -65,16 +69,31 @@ class Game:
 
         return final_x,final_y,final_z
     
-    def keyboard(self):
+    def controls(self):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.play = False
+            elif event.type == pg.MOUSEMOTION:
+                if not self.freeze:
+                    dirX, dirY = event.rel
+                    dirX, dirY = dirX*0.25, dirY*0.25
+                    self.Ya += dirX/math.tau % math.tau
+                    self.Xa += dirY/math.tau % math.tau
+            elif event.type == pg.MOUSEWHEEL:
+                if event.y < 1:
+                    self.scale-=5
+                else:
+                    self.scale+=5
+
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_f:
+                    if self.freeze:
+                        self.freeze = False
+                    else:
+                        self.freeze = True
 
     def update(self):
         self.clock.tick(FPS)
-        self.Xa = (self.Xa+0.01)%math.tau
-        self.Ya = (self.Ya+0.01)%math.tau
-        self.Za = (self.Za+0.01)%math.tau
 
     def draw(self):
         self.display.fill((0,76,153))
@@ -91,14 +110,14 @@ class Game:
         qeue.sort(key=lambda item:item[0], reverse=True)
 
         for z, f, c in qeue:
-            points = [(30*dots[i][0]+400, 30*dots[i][1]+400) for i in f]
+            points = [(self.scale*dots[i][0]+offsetX, self.scale*self.offsetY[i][1]+400) for i in f]
             pg.draw.polygon(self.display, c, points)
             # pg.draw.polygon(self.display, (0, 0, 0), points, 2)
 
         pg.display.flip()
     def run(self):
         while self.play:
-            self.keyboard()
+            self.controls()
             self.update()
             self.draw()
 
